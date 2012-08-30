@@ -3,5 +3,5 @@ ANN_ES
 
 ANN's External Storage Version
 
-ANN库的外部存储支持版本
+ANN搴撶殑澶栭儴瀛樺偍鏀寔鐗堟湰
 http://www.cs.umd.edu/~mount/ANN/
