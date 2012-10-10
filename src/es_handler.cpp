@@ -21,6 +21,13 @@ void ES_INFO::set_fix_len(unsigned int fix_len) {
 	m_buff = new char[fix_len+1];
 }
 
+int ES_INFO::mem2pt_bin(char* pts,
+		int dim, ANNpoint p) {
+	unsigned int dataSize =
+			sizeof(double)*dim;
+	memcpy((char*)p, pts, dataSize);
+}
+
 int ES_INFO::str2Pt(char* pts,
 		int dim, ANNpoint p) {
 	char *pNext;
@@ -37,7 +44,7 @@ int ES_INFO::str2Pt(char* pts,
 		p[i] = atof(pNext);
 		++i;
 		if ( i >= dim ) {
-//			printf("get ok\n");
+			//			printf("get ok\n");
 			return 0;
 		}
 		pNext = strtok(NULL," ");
@@ -50,12 +57,31 @@ void ES_INFO::set_g_value(ANNpoint es_value) {
 }
 
 void ES_INFO::get_value_by_index(unsigned int index) {
-	unsigned long int offset = index*m_fix_len;
-	fseek(m_file[0], offset, SEEK_SET);
-	fread(m_buff, m_fix_len, 1, m_file[0]);
-	m_buff[m_fix_len] = 0;
-//	printf("get value %d\n", index);
-	str2Pt(m_buff, m_dim, m_value);
+	switch (m_mode){
+	case 0: {
+		unsigned long int offset = index*m_fix_len;
+		fseek(m_file[0], offset, SEEK_SET);
+		fread(m_buff, m_fix_len, 1, m_file[0]);
+		m_buff[m_fix_len] = 0;
+		//	printf("get value %d\n", index);
+		str2Pt(m_buff, m_dim, m_value);
+		break;
+	}
+	case 3: {
+		unsigned long int offset =
+				index*sizeof(double)*m_dim;
+		char *pts = m_mem + offset;
+		mem2pt_bin(pts, m_dim, m_value);
+
+//		printf("get index: %d\n", index);
+//		for( unsigned int i=0; i<m_dim; ++i ) {
+//			printf("%lf ", m_value[i]);
+//		}
+//		printf("\n");
+
+		break;
+	}
+	}
 }
 
 #endif /* ES_HANDLER_ */

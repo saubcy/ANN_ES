@@ -853,6 +853,20 @@ DLL_API void annClose();		// called to end use of ANN
 
 class ES_INFO {
 public:
+	ES_INFO() {
+		m_mode = 0;
+	}
+
+	ES_INFO(unsigned int mode) {
+		set_mode(mode);
+	}
+
+	void set_mode(unsigned int mode) {
+		m_mode = mode;
+	}
+	void set_mem_info(char *mem) {
+		m_mem = mem;
+	}
 	void set_file_info(FILE **file,
 			unsigned int file_num,
 			unsigned int file_page_size);
@@ -863,15 +877,26 @@ public:
 
 	int str2Pt(char* pts,
 				int dim, ANNpoint p);
+	int mem2pt_bin(char* pts,
+			int dim, ANNpoint p);
 
 public:
 	ANNpoint m_value;
 	FILE **m_file;
+	char *m_mem;
 	unsigned int m_file_num;
 	unsigned int m_file_page_size;
 	unsigned int m_fix_len;
 	char* m_buff;
 	unsigned int m_dim;
+	/**
+	 * 特征值存储模式
+	 * 0. 文件存储，字符串形式
+	 * 1. 文件存储，二进制形式
+	 * 2. 内存存储，字符串形式
+	 * 3. 内存存储，二进制形式
+	 */
+	unsigned int m_mode;
 };
 
 #endif
