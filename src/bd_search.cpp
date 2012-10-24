@@ -40,14 +40,14 @@ void ANNbd_shrink::ann_search(
 		ES_INFO* es_info,
 		ANNdist box_dist)
 {
-												// check dist calc term cond.
-	if (ANNmaxPtsVisited != 0 && ANNptsVisited > ANNmaxPtsVisited) return;
+	if (ANNmaxPtsVisited[es_info->getThreadNo()] != 0
+			&& ANNptsVisited[es_info->getThreadNo()] > ANNmaxPtsVisited[es_info->getThreadNo()]) return;
 
 	ANNdist inner_dist = 0;						// distance to inner box
 	for (int i = 0; i < n_bnds; i++) {			// is query point in the box?
-		if (bnds[i].out(ANNkdQ)) {				// outside this bounding side?
+		if (bnds[i].out(ANNkdQ[es_info->getThreadNo()])) {				// outside this bounding side?
 												// add to inner distance
-			inner_dist = (ANNdist) ANN_SUM(inner_dist, bnds[i].dist(ANNkdQ));
+			inner_dist = (ANNdist) ANN_SUM(inner_dist, bnds[i].dist(ANNkdQ[es_info->getThreadNo()]));
 		}
 	}
 	if (inner_dist <= box_dist) {				// if inner box is closer

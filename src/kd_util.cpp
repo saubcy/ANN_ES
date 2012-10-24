@@ -85,12 +85,12 @@ void annEnclRect(
 #endif
 		ANNcoord lo_bnd = PA(0,d);		// lower bound on dimension d
 		ANNcoord hi_bnd = PA(0,d);		// upper bound on dimension d
-		printf("n[%d]\n", n);
+//		printf("n[%d]\n", n);
 		for (int i = 0; i < n; i++) {
 #if 1 // es code
 			es_info->get_value_by_index(pidx[i]);
 #endif
-			printf("PA[%d,%d]\n", i, d);
+//			printf("PA[%d,%d]\n", i, d);
 			if (PA(i,d) < lo_bnd) {
 				lo_bnd = PA(i,d);
 			} else if (PA(i,d) > hi_bnd) {

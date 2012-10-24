@@ -204,8 +204,13 @@ void annError(const char* msg, ANNerr level)
 //		on the running time of the algorithm.
 //----------------------------------------------------------------------
 
+#if 0
 int	ANNmaxPtsVisited = 0;	// maximum number of pts visited
 int	ANNptsVisited;			// number of pts visited in search
+#endif
+
+int	ANNmaxPtsVisited[20];	// maximum number of pts visited
+int	ANNptsVisited[20];			// number of pts visited in search
 
 //----------------------------------------------------------------------
 //	Global function declarations
@@ -214,5 +219,5 @@ int	ANNptsVisited;			// number of pts visited in search
 void annMaxPtsVisit(			// set limit on max. pts to visit in search
 		int					maxPts)			// the limit
 {
-	ANNmaxPtsVisited = maxPts;
+	ANNmaxPtsVisited[0] = maxPts;
 }

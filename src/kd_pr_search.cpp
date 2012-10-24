@@ -98,7 +98,7 @@ void ANNkd_tree::annkPriSearch(
 	ANNprDim = dim;						// copy arguments to static equivs
 	ANNprQ = q;
 	ANNprPts = pts;
-	ANNptsVisited = 0;					// initialize count of points visited
+	ANNptsVisited[0] = 0;					// initialize count of points visited
 
 	ANNprPointMK = new ANNmin_k(k);		// create set for closest k points
 
@@ -110,7 +110,8 @@ void ANNkd_tree::annkPriSearch(
 	ANNprBoxPQ->insert(box_dist, root); // insert root in priority queue
 
 	while (ANNprBoxPQ->non_empty() &&
-		(!(ANNmaxPtsVisited != 0 && ANNptsVisited > ANNmaxPtsVisited))) {
+		(!(ANNmaxPtsVisited[0] != 0
+				&& ANNptsVisited[0] > ANNmaxPtsVisited[0]))) {
 		ANNkd_ptr np;					// next box from prior queue
 
 										// extract closest box from queue
@@ -215,5 +216,5 @@ void ANNkd_leaf::ann_pri_search(ANNdist box_dist)
 	}
 	ANN_LEAF(1)							// one more leaf node visited
 	ANN_PTS(n_pts)						// increment points visited
-	ANNptsVisited += n_pts;				// increment number of points visited
+	ANNptsVisited[0] += n_pts;				// increment number of points visited
 }

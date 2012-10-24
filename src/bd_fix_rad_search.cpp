@@ -39,7 +39,7 @@
 void ANNbd_shrink::ann_FR_search(ANNdist box_dist)
 {
 												// check dist calc term cond.
-	if (ANNmaxPtsVisited != 0 && ANNptsVisited > ANNmaxPtsVisited) return;
+	if (ANNmaxPtsVisited[0] != 0 && ANNptsVisited[0] > ANNmaxPtsVisited[0]) return;
 
 	ANNdist inner_dist = 0;						// distance to inner box
 	for (int i = 0; i < n_bnds; i++) {			// is query point in the box?

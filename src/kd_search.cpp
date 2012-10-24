@@ -76,11 +76,11 @@
 //		These are given below.
 //----------------------------------------------------------------------
 
-int				ANNkdDim;				// dimension of space
-ANNpoint		ANNkdQ;					// query point
-double			ANNkdMaxErr;			// max tolerable squared error
-ANNpointArray	ANNkdPts;				// the points
-ANNmin_k		*ANNkdPointMK;			// set of k closest points
+int				ANNkdDim[20];				// dimension of space
+ANNpoint		ANNkdQ[20];					// query point
+double			ANNkdMaxErr[20];			// max tolerable squared error
+ANNpointArray	ANNkdPts[20];				// the points
+ANNmin_k		*ANNkdPointMK[20];			// set of k closest points
 
 //----------------------------------------------------------------------
 //	annkSearch - search for the k nearest neighbors
@@ -94,28 +94,27 @@ void ANNkd_tree::annkSearch(
 		ANNdistArray		dd,				// the approximate nearest neighbor
 		double				eps)			// the error bound
 {
-
-	ANNkdDim = dim;						// copy arguments to static equivs
-	ANNkdQ = q;
-	ANNkdPts = pts;
-	ANNptsVisited = 0;					// initialize count of points visited
+	ANNkdDim[es_info->getThreadNo()] = dim;						// copy arguments to static equivs
+	ANNkdQ[es_info->getThreadNo()] = q;
+	ANNkdPts[es_info->getThreadNo()] = pts;
+	ANNptsVisited[es_info->getThreadNo()] = 0;					// initialize count of points visited
 
 	if (k > n_pts) {					// too many near neighbors?
 		annError("Requesting more near neighbors than data points", ANNabort);
 	}
 
-	ANNkdMaxErr = ANN_POW(1.0 + eps);
+	ANNkdMaxErr[es_info->getThreadNo()] = ANN_POW(1.0 + eps);
 	ANN_FLOP(2)							// increment floating op count
 
-	ANNkdPointMK = new ANNmin_k(k);		// create set for closest k points
+	ANNkdPointMK[es_info->getThreadNo()] = new ANNmin_k(k);		// create set for closest k points
 	// search starting at the root
 	root->ann_search(es_info, annBoxDistance(q, bnd_box_lo, bnd_box_hi, dim));
 
 	for (int i = 0; i < k; i++) {		// extract the k-th closest points
-		dd[i] = ANNkdPointMK->ith_smallest_key(i);
-		nn_idx[i] = ANNkdPointMK->ith_smallest_info(i);
+		dd[i] = ANNkdPointMK[es_info->getThreadNo()]->ith_smallest_key(i);
+		nn_idx[i] = ANNkdPointMK[es_info->getThreadNo()]->ith_smallest_info(i);
 	}
-	delete ANNkdPointMK;				// deallocate closest point set
+	delete ANNkdPointMK[es_info->getThreadNo()];				// deallocate closest point set
 }
 
 //----------------------------------------------------------------------
@@ -127,15 +126,18 @@ void ANNkd_split::ann_search(
 		ANNdist box_dist)
 {
 	// check dist calc term condition
-	if (ANNmaxPtsVisited != 0 && ANNptsVisited > ANNmaxPtsVisited) return;
+	if (ANNmaxPtsVisited[es_info->getThreadNo()] != 0
+			&& ANNptsVisited[es_info->getThreadNo()] > ANNmaxPtsVisited[es_info->getThreadNo()]) {
+		return;
+	}
 
 	// distance to cutting plane
-	ANNcoord cut_diff = ANNkdQ[cut_dim] - cut_val;
+	ANNcoord cut_diff = ANNkdQ[es_info->getThreadNo()][cut_dim] - cut_val;
 
 	if (cut_diff < 0) {					// left of cutting plane
 		child[ANN_LO]->ann_search(es_info, box_dist);// visit closer child first
 
-		ANNcoord box_diff = cd_bnds[ANN_LO] - ANNkdQ[cut_dim];
+		ANNcoord box_diff = cd_bnds[ANN_LO] - ANNkdQ[es_info->getThreadNo()][cut_dim];
 		if (box_diff < 0)				// within bounds - ignore
 			box_diff = 0;
 		// distance to further box
@@ -143,14 +145,15 @@ void ANNkd_split::ann_search(
 				ANN_DIFF(ANN_POW(box_diff), ANN_POW(cut_diff)));
 
 		// visit further child if close enough
-		if (box_dist * ANNkdMaxErr < ANNkdPointMK->max_key())
+		if (box_dist * ANNkdMaxErr[es_info->getThreadNo()]
+		                           < ANNkdPointMK[es_info->getThreadNo()]->max_key())
 			child[ANN_HI]->ann_search(es_info, box_dist);
 
 	}
 	else {								// right of cutting plane
 		child[ANN_HI]->ann_search(es_info, box_dist);// visit closer child first
 
-		ANNcoord box_diff = ANNkdQ[cut_dim] - cd_bnds[ANN_HI];
+		ANNcoord box_diff = ANNkdQ[es_info->getThreadNo()][cut_dim] - cd_bnds[ANN_HI];
 		if (box_diff < 0)				// within bounds - ignore
 			box_diff = 0;
 		// distance to further box
@@ -158,7 +161,7 @@ void ANNkd_split::ann_search(
 				ANN_DIFF(ANN_POW(box_diff), ANN_POW(cut_diff)));
 
 		// visit further child if close enough
-		if (box_dist * ANNkdMaxErr < ANNkdPointMK->max_key())
+		if (box_dist * ANNkdMaxErr[es_info->getThreadNo()] < ANNkdPointMK[es_info->getThreadNo()]->max_key())
 			child[ANN_LO]->ann_search(es_info, box_dist);
 
 	}
@@ -183,36 +186,36 @@ void ANNkd_leaf::ann_search(
 	register ANNcoord t;
 	register int d;
 
-	min_dist = ANNkdPointMK->max_key(); // k-th smallest distance so far
+	min_dist = ANNkdPointMK[es_info->getThreadNo()]->max_key(); // k-th smallest distance so far
 
 	for (int i = 0; i < n_pts; i++) {	// check points in bucket
 
 #if 1	// es code
 		es_info->get_value_by_index(bkt[i]);
 #endif
-		pp = ANNkdPts[bkt[i]];			// first coord of next data point
-		qq = ANNkdQ;					// first coord of query point
+		pp = ANNkdPts[es_info->getThreadNo()][bkt[i]];			// first coord of next data point
+		qq = ANNkdQ[es_info->getThreadNo()];					// first coord of query point
 		dist = 0;
 
-		for(d = 0; d < ANNkdDim; d++) {
+		for(d = 0; d < ANNkdDim[es_info->getThreadNo()]; d++) {
 			ANN_COORD(1)				// one more coordinate hit
-			ANN_FLOP(4)					// increment floating ops
+					ANN_FLOP(4)					// increment floating ops
 
-			t = *(qq++) - *(pp++);		// compute length and adv coordinate
+					t = *(qq++) - *(pp++);		// compute length and adv coordinate
 			// exceeds dist to k-th smallest?
 			if( (dist = ANN_SUM(dist, ANN_POW(t))) > min_dist) {
 				break;
 			}
 		}
 
-		if (d >= ANNkdDim &&					// among the k best?
+		if (d >= ANNkdDim[es_info->getThreadNo()] &&					// among the k best?
 				(ANN_ALLOW_SELF_MATCH || dist!=0)) { // and no self-match problem
 			// add it to the list
-			ANNkdPointMK->insert(dist, bkt[i]);
-			min_dist = ANNkdPointMK->max_key();
+			ANNkdPointMK[es_info->getThreadNo()]->insert(dist, bkt[i]);
+			min_dist = ANNkdPointMK[es_info->getThreadNo()]->max_key();
 		}
 	}
 	ANN_LEAF(1)							// one more leaf node visited
 	ANN_PTS(n_pts)						// increment points visited
-	ANNptsVisited += n_pts;				// increment number of points visited
+	ANNptsVisited[es_info->getThreadNo()] += n_pts;				// increment number of points visited
 }

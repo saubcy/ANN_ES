@@ -851,10 +851,13 @@ DLL_API void annClose();		// called to end use of ANN
 //	ES support
 //----------------------------------------------------------------------
 
+#define MAX_THREAD 20;
+
 class ES_INFO {
 public:
 	ES_INFO() {
 		m_mode = 0;
+		thread_no = 0;
 	}
 
 	ES_INFO(unsigned int mode) {
@@ -879,6 +882,15 @@ public:
 				int dim, ANNpoint p);
 	int mem2pt_bin(char* pts,
 			int dim, ANNpoint p);
+	void setThreadNo(int no) {
+		thread_no = no;
+	}
+	unsigned int getThreadNo() {
+		return thread_no;
+	}
+
+private:
+	unsigned int thread_no;
 
 public:
 	ANNpoint m_value;
